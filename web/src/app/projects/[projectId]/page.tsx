@@ -31,6 +31,7 @@ export default function ProjectBoardPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>("todo");
+  const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadBoard() {
@@ -139,6 +140,29 @@ export default function ProjectBoardPage() {
       setMessage("Unable to move the task. Please try again.");
     } finally {
       setUpdatingTaskId(null);
+    }
+  }
+
+  async function handleDeleteTask(taskId: number) {
+    const shouldDelete = window.confirm("Hapus task ini?");
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setDeletingTaskId(taskId);
+    setMessage("");
+
+    try {
+      await taskApi.delete(taskId);
+
+      setTasks((currentTasks) =>
+        currentTasks.filter((task) => task.id !== taskId),
+      );
+    } catch {
+      setMessage("Unable to delete the task. Please try again.");
+    } finally {
+      setDeletingTaskId(null);
     }
   }
 
@@ -297,6 +321,16 @@ export default function ProjectBoardPage() {
                             <option value="done">Done</option>
                           </select>
                         </label>
+                        <button
+                          className="mt-3 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={deletingTaskId === task.id}
+                          onClick={() => handleDeleteTask(task.id)}
+                          type="button"
+                        >
+                          {deletingTaskId === task.id
+                            ? "Deleting..."
+                            : "Delete task"}
+                        </button>
                       </article>
                     ))
                   )}

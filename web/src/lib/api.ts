@@ -107,6 +107,10 @@ async function request<T>(
     );
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -182,6 +186,14 @@ export const taskApi = {
       request<TaskResponse>(`/api/tasks/${taskId}`, {
         method: "PATCH",
         body: payload,
+      }),
+    );
+  },
+
+  delete(taskId: number) {
+    return initializeCsrf().then(() =>
+      request<void>(`/api/tasks/${taskId}`, {
+        method: "DELETE",
       }),
     );
   },
