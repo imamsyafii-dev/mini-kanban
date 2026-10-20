@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, authApi, projectApi } from "@/lib/api";
@@ -200,16 +201,17 @@ export default function DashboardPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => (
-                <article
+                <Link
                   key={project.id}
-                  className="rounded-2xl bg-white p-5 shadow-sm"
+                  href={`/projects/${project.id}`}
+                  className="rounded-2xl bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                   style={{ borderTop: `4px solid ${project.color}` }}
                 >
                   <h3 className="font-semibold text-slate-900">{project.name}</h3>
                   <p className="mt-2 min-h-10 text-sm text-slate-600">
                     {project.description || "No description yet."}
                   </p>
-                </article>
+                </Link>
               ))}
             </div>
           )}

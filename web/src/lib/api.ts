@@ -12,6 +12,12 @@ import type {
   ProjectResponse,
 } from "@/types/project";
 
+import type {
+  CreateTaskPayload,
+  TaskCollectionResponse,
+  TaskResponse,
+} from "@/types/task";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type ApiRequestOptions = Omit<RequestInit, "body" | "headers"> & {
@@ -140,9 +146,30 @@ export const projectApi = {
     return request<ProjectCollectionResponse>("/api/projects");
   },
 
+  show(projectId: number) {
+    return request<ProjectResponse>(`/api/projects/${projectId}`);
+  },
+
   create(payload: CreateProjectPayload) {
     return initializeCsrf().then(() =>
       request<ProjectResponse>("/api/projects", {
+        method: "POST",
+        body: payload,
+      }),
+    );
+  },
+};
+
+export const taskApi = {
+  list(projectId: number) {
+    return request<TaskCollectionResponse>(
+      `/api/projects/${projectId}/tasks`,
+    );
+  },
+
+  create(projectId: number, payload: CreateTaskPayload) {
+    return initializeCsrf().then(() =>
+      request<TaskResponse>(`/api/projects/${projectId}/tasks`, {
         method: "POST",
         body: payload,
       }),
