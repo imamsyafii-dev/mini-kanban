@@ -19,7 +19,8 @@ export type CreateTaskPayload = {
   due_date?: string | null;
 };
 
-export type UpdateTaskPayload = Partial<CreateTaskPayload> & {
+export type UpdateTaskPayload = Omit<Partial<CreateTaskPayload>, "description"> & {
+  description?: string | null;
   position?: number;
 };
 

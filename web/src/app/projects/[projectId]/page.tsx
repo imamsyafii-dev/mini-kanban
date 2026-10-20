@@ -32,6 +32,10 @@ export default function ProjectBoardPage() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [isSavingTask, setIsSavingTask] = useState(false);
 
   useEffect(() => {
     async function loadBoard() {
@@ -166,6 +170,51 @@ export default function ProjectBoardPage() {
     }
   }
 
+  function handleStartEdit(task: Task) {
+    setEditingTaskId(task.id);
+    setEditTitle(task.title);
+    setEditDescription(task.description ?? "");
+    setMessage("");
+  }
+
+  function handleCancelEdit() {
+    setEditingTaskId(null);
+    setEditTitle("");
+    setEditDescription("");
+  }
+
+  async function handleUpdateTask(
+    event: FormEvent<HTMLFormElement>,
+    taskId: number,
+  ) {
+    event.preventDefault();
+
+    if (!editTitle.trim()) {
+      return;
+    }
+
+    setIsSavingTask(true);
+    setMessage("");
+
+    try {
+      const response = await taskApi.update(taskId, {
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+      });
+
+      setTasks((currentTasks) =>
+        currentTasks.map((task) =>
+          task.id === taskId ? response.data : task,
+        ),
+      );
+      handleCancelEdit();
+    } catch {
+      setMessage("Unable to update the task. Please try again.");
+    } finally {
+      setIsSavingTask(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
@@ -297,40 +346,97 @@ export default function ProjectBoardPage() {
                   ) : (
                     columnTasks.map((task) => (
                       <article key={task.id} className="rounded-xl bg-white p-4 shadow-sm">
-                        <h3 className="font-medium text-slate-900">{task.title}</h3>
-                        {task.description && (
-                          <p className="mt-2 text-sm text-slate-600">
-                            {task.description}
-                          </p>
-                        )}
-                        <label className="mt-4 block text-xs font-medium text-slate-500">
-                          Status
-                          <select
-                            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
-                            value={task.status}
-                            disabled={updatingTaskId === task.id}
-                            onChange={(event) =>
-                              handleStatusChange(
-                                task,
-                                event.target.value as TaskStatus,
-                              )
-                            }
+                        {editingTaskId === task.id ? (
+                          <form
+                            className="space-y-3"
+                            onSubmit={(event) => handleUpdateTask(event, task.id)}
                           >
-                            <option value="todo">To Do</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="done">Done</option>
-                          </select>
-                        </label>
-                        <button
-                          className="mt-3 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                          disabled={deletingTaskId === task.id}
-                          onClick={() => handleDeleteTask(task.id)}
-                          type="button"
-                        >
-                          {deletingTaskId === task.id
-                            ? "Deleting..."
-                            : "Delete task"}
-                        </button>
+                            <label className="block text-xs font-medium text-slate-500">
+                              Title
+                              <input
+                                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                maxLength={150}
+                                onChange={(event) => setEditTitle(event.target.value)}
+                                required
+                                value={editTitle}
+                              />
+                            </label>
+                            <label className="block text-xs font-medium text-slate-500">
+                              Description
+                              <textarea
+                                className="mt-1 min-h-20 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                maxLength={3000}
+                                onChange={(event) =>
+                                  setEditDescription(event.target.value)
+                                }
+                                value={editDescription}
+                              />
+                            </label>
+                            <div className="flex gap-2">
+                              <button
+                                className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={isSavingTask || !editTitle.trim()}
+                                type="submit"
+                              >
+                                {isSavingTask ? "Saving..." : "Save changes"}
+                              </button>
+                              <button
+                                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700"
+                                disabled={isSavingTask}
+                                onClick={handleCancelEdit}
+                                type="button"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <h3 className="font-medium text-slate-900">{task.title}</h3>
+                            {task.description && (
+                              <p className="mt-2 text-sm text-slate-600">
+                                {task.description}
+                              </p>
+                            )}
+                            <label className="mt-4 block text-xs font-medium text-slate-500">
+                              Status
+                              <select
+                                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+                                value={task.status}
+                                disabled={updatingTaskId === task.id}
+                                onChange={(event) =>
+                                  handleStatusChange(
+                                    task,
+                                    event.target.value as TaskStatus,
+                                  )
+                                }
+                              >
+                                <option value="todo">To Do</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="done">Done</option>
+                              </select>
+                            </label>
+                            <div className="mt-3 flex gap-2">
+                              <button
+                                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                onClick={() => handleStartEdit(task)}
+                                type="button"
+                              >
+                                Edit task
+                              </button>
+                              <button
+                                className="rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                disabled={deletingTaskId === task.id}
+                                onClick={() => handleDeleteTask(task.id)}
+                                type="button"
+                              >
+                                {deletingTaskId === task.id
+                                  ? "Deleting..."
+                                  : "Delete task"}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </article>
                     ))
                   )}
