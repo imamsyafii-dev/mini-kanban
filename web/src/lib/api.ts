@@ -6,6 +6,12 @@ import type {
   RegisterPayload,
 } from "@/types/auth";
 
+import type {
+  CreateProjectPayload,
+  ProjectCollectionResponse,
+  ProjectResponse,
+} from "@/types/project";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type ApiRequestOptions = Omit<RequestInit, "body" | "headers"> & {
@@ -124,6 +130,21 @@ export const authApi = {
     return initializeCsrf().then(() =>
       request<{ message: string }>("/api/auth/logout", {
         method: "POST",
+      }),
+    );
+  },
+};
+
+export const projectApi = {
+  list() {
+    return request<ProjectCollectionResponse>("/api/projects");
+  },
+
+  create(payload: CreateProjectPayload) {
+    return initializeCsrf().then(() =>
+      request<ProjectResponse>("/api/projects", {
+        method: "POST",
+        body: payload,
       }),
     );
   },
