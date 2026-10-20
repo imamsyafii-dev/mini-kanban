@@ -16,6 +16,7 @@ import type {
   CreateTaskPayload,
   TaskCollectionResponse,
   TaskResponse,
+  UpdateTaskPayload,
 } from "@/types/task";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -171,6 +172,15 @@ export const taskApi = {
     return initializeCsrf().then(() =>
       request<TaskResponse>(`/api/projects/${projectId}/tasks`, {
         method: "POST",
+        body: payload,
+      }),
+    );
+  },
+
+  update(taskId: number, payload: UpdateTaskPayload) {
+    return initializeCsrf().then(() =>
+      request<TaskResponse>(`/api/tasks/${taskId}`, {
+        method: "PATCH",
         body: payload,
       }),
     );

@@ -19,6 +19,10 @@ export type CreateTaskPayload = {
   due_date?: string | null;
 };
 
+export type UpdateTaskPayload = Partial<CreateTaskPayload> & {
+  position?: number;
+};
+
 export type TaskCollectionResponse = {
   data: Task[];
 };

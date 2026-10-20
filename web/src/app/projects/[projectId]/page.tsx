@@ -27,6 +27,7 @@ export default function ProjectBoardPage() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>("todo");
@@ -96,6 +97,48 @@ export default function ProjectBoardPage() {
       setMessage("Unable to create the task. Please try again.");
     } finally {
       setIsCreatingTask(false);
+    }
+  }
+
+  async function handleStatusChange(task: Task, nextStatus: TaskStatus) {
+    if (task.status === nextStatus) {
+      return;
+    }
+
+    const previousStatus = task.status;
+    setUpdatingTaskId(task.id);
+    setMessage("");
+
+    setTasks((currentTasks) =>
+      currentTasks.map((currentTask) =>
+        currentTask.id === task.id
+          ? { ...currentTask, status: nextStatus }
+          : currentTask,
+      ),
+    );
+
+    try {
+      const response = await taskApi.update(task.id, {
+        status: nextStatus,
+      });
+
+      setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+          currentTask.id === task.id ? response.data : currentTask,
+        ),
+      );
+    } catch {
+      setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+          currentTask.id === task.id
+            ? { ...currentTask, status: previousStatus }
+            : currentTask,
+        ),
+      );
+
+      setMessage("Unable to move the task. Please try again.");
+    } finally {
+      setUpdatingTaskId(null);
     }
   }
 
@@ -236,6 +279,24 @@ export default function ProjectBoardPage() {
                             {task.description}
                           </p>
                         )}
+                        <label className="mt-4 block text-xs font-medium text-slate-500">
+                          Status
+                          <select
+                            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700"
+                            value={task.status}
+                            disabled={updatingTaskId === task.id}
+                            onChange={(event) =>
+                              handleStatusChange(
+                                task,
+                                event.target.value as TaskStatus,
+                              )
+                            }
+                          >
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                          </select>
+                        </label>
                       </article>
                     ))
                   )}
